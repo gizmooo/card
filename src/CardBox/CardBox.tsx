@@ -1,20 +1,39 @@
 /* eslint-disable */
 import './CardBox.css';
 import React, {useEffect, useState} from 'react';
-import {CardBoxInstance} from './CardBoxInstance';
+import {EventHandler, CardBoxInstance} from './instance/CardBoxInstance';
 
 
-export const CardBox = () => {
-  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+export type Props = {
+  cover?: string;
+  onLoad?: EventHandler;
+  onComplete?: EventHandler;
+}
+
+export const CardBox = ({cover, onLoad, onComplete}: Props) => {
+  const [canvas, setCanvas] = useState<HTMLDivElement | null>(null);
+  const [instance, setInstance] = useState<CardBoxInstance>();
 
   useEffect(() => {
     if (!canvas) return;
-    const instance = new CardBoxInstance(canvas);
+    if (!cover) throw new Error('Пацантре, ссыль на обложку карточки должна быть сразу');
+    const inst = new CardBoxInstance(canvas, cover);
+    setInstance(inst);
 
     return () => {
-      instance.destroy();
+      inst.destroy();
     }
   }, [canvas]);
 
-  return <canvas className='card-box' ref={setCanvas}/>
+  // хендлер окончания загрузки
+  useEffect(() => {
+    if (instance) instance.onLoad = onLoad;
+  }, [instance, onLoad]);
+
+  // хендлер окончания анимаций
+  useEffect(() => {
+    if (instance) instance.onComplete = onComplete;
+  }, [instance, onComplete])
+
+  return <div className='card-box' ref={setCanvas}/>
 }
