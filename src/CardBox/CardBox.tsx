@@ -4,16 +4,23 @@ import React, {useEffect, useState} from 'react';
 import {EventHandler, CardBoxInstance} from './instance/CardBoxInstance';
 
 
+/**
+ * cover
+ * изображение должно быть растровое,
+ * размер 204x304 без закруглений углов
+ * желательно в размере x2(для ретины)
+ *
+ * onStateChange
+ * тут все понятно, в App.tsx описаны все состояния
+ * нулевое, конечно, не стриггерит никогда
+ */
 export type Props = {
-  // изображение должно быть растровое,
-  // размер 204x304 без закруглений углов
-  // желательно в размере x2(для ретины)
   cover?: string;
-  onLoad?: EventHandler;
-  onComplete?: EventHandler;
+  onStateChange?: EventHandler;
 }
 
-export const CardBox = ({cover, onLoad, onComplete}: Props) => {
+
+export const CardBox = ({cover, onStateChange}: Props) => {
   const [canvas, setCanvas] = useState<HTMLDivElement | null>(null);
   const [instance, setInstance] = useState<CardBoxInstance>();
 
@@ -28,15 +35,9 @@ export const CardBox = ({cover, onLoad, onComplete}: Props) => {
     }
   }, [canvas]);
 
-  // хендлер окончания загрузки
   useEffect(() => {
-    if (instance) instance.onLoad = onLoad;
-  }, [instance, onLoad]);
-
-  // хендлер окончания анимаций
-  useEffect(() => {
-    if (instance) instance.onComplete = onComplete;
-  }, [instance, onComplete])
+    if (instance) instance.onStateChange = onStateChange;
+  }, [instance, onStateChange]);
 
   return <div className='card-box' ref={setCanvas}/>
 }

@@ -45,7 +45,14 @@ const getRoundedPlane = (width: number, height: number, radius: number, z: numbe
   return mesh;
 }
 
-export type EventHandler = () => void;
+export enum State {
+  'not-loaded',
+  'loaded',
+  'start-animation-ended',
+  'drag-ended',
+  'end-animation-ended'
+}
+export type EventHandler = (state: State) => void;
 
 export class CardBoxInstance{
   private _isLoaded = false;
@@ -66,8 +73,7 @@ export class CardBoxInstance{
     el: HTMLDivElement;
     inner: HTMLDivElement;
   };
-  private _onLoad?: EventHandler;
-  private _onComplete?: EventHandler;
+  private _onStateChange: EventHandler = () => {};
 
   private readonly _renderer: WebGLRenderer;
   private readonly _scene = new Scene();
@@ -77,7 +83,7 @@ export class CardBoxInstance{
   private readonly _cardGroupAnimation = new Group();
   private readonly _cardGroupRotation = new Group();
   private readonly _camera: PerspectiveCamera;
-  private readonly _clock = new Clock();
+  // private readonly _clock = new Clock();
   private _mixer?: AnimationMixer;
   private _clip?: AnimationClip;
   private _action?: AnimationAction;
@@ -124,7 +130,7 @@ export class CardBoxInstance{
 
         this._resize();
         this._raf = requestAnimationFrame(this._tickHandler);
-        this._onLoad && this._onLoad();
+        this._onStateChange(1);
       })
       .then(() => this._animateStart());
   }
@@ -136,12 +142,12 @@ export class CardBoxInstance{
     tl.to(this._globalGroup.position, {
       z: -1,
       y: -0.03,
-      duration: 1.4,
+      duration: 2,
       ease: "power4.out"
     }, 0.1);
     tl.to(this._globalGroup.rotation, {
       y: 0,
-      duration: 1.6,
+      duration: 2.2,
       ease: "expo.out"
     }, 0.1);
     tl.to(this._hand.inner, {
@@ -150,41 +156,50 @@ export class CardBoxInstance{
       opacity: 1,
       ease: "expo.out",
       duration: 1
-    }, 1);
+    }, '-=1');
 
     tl.add(() => {
       this._draggable.enable();
     }, 1.5);
+
+    tl.add(() => {
+      this._onStateChange(2)
+    })
   }
   private _animateDragEnd() {
     this._draggable.disable();
     this._top?.removeFromParent();
+    this._onStateChange(3);
 
     const tl = gsap.timeline();
 
     tl.to(this._modelGroupAnimation.position, {
       y: -2,
       x: 0.1,
-      duration: 1.5,
+      duration: 1.9,
+      overwrite: true,
       ease: "power4.inOut"
     }, 0);
     tl.to(this._modelGroupAnimation.rotation, {
       z: Math.PI / 4,
-      duration: 1.6,
+      duration: 2,
+      overwrite: true,
       ease: "expo.inOut"
     }, 0);
     tl.to(this._hand.inner, {
       x: -5,
       y: 50,
-      opacity: 0,
+      overwrite: true,
       ease: "power4.inOut",
       duration: 1.3
     }, 0);
     tl.to(this._hand.inner, {
       opacity: 0,
-      ease: "power4.inOut",
-      duration: 1
+      duration: 1,
+      overwrite: true,
+      ease: "power4.inOut"
     }, 0);
+
     tl.to(this._cardGroupRotation.rotation, {
       z: Math.PI / 36,
       duration: 1,
@@ -201,12 +216,15 @@ export class CardBoxInstance{
 
     tl.to(this._cardGroupRotation.rotation, {
       z: 0,
+      y: 0,
       duration: 0.7,
+      overwrite: true,
       ease: "power4.inOut"
     }, 1);
     tl.to(this._cardGroupAnimation.rotation, {
       y: Math.PI * 2,
       duration: 1,
+      overwrite: true,
       ease: "power4.inOut"
     }, 0.7);
     tl.to(this._cardGroupAnimation.scale, {
@@ -214,13 +232,18 @@ export class CardBoxInstance{
       y: 1.4,
       z: 1.4,
       duration: 1,
+      overwrite: true,
       ease: "power4.inOut"
     }, 0.8);
     tl.to(this._cardGroupAnimation.position, {
       y: 0.1,
       duration: 1,
+      overwrite: true,
       ease: "power4.inOut"
     }, 0.8);
+
+
+    tl.add(() => this._onStateChange(4))
   }
 
 
@@ -235,16 +258,12 @@ export class CardBoxInstance{
     // window.removeEventListener('mousemove', this._onMove);
     window.removeEventListener('resize', this._onResize);
   }
-  public set onLoad(func: EventHandler | undefined) {
-    this._onLoad = func;
+  public set onStateChange(func: EventHandler | undefined) {
+    this._onStateChange = func || (() => {});
 
-    if (this._isLoaded && func) func();
+    // if (this._isLoaded && func) func();
   }
-  public set onComplete(func: EventHandler | undefined) {
-    this._onComplete = func;
 
-    if (this._isComplete && func) func();
-  }
 
 
   private _createHand() {
@@ -269,7 +288,7 @@ export class CardBoxInstance{
       trigger: container,
       inertia: true,
       edgeResistance: 0.8,
-      dragResistance: 0,
+      dragResistance: 0.5,
       // velocity: 10000000,
       resistance: 10000000,
       snap: {
