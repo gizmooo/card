@@ -5,6 +5,9 @@ import {EventHandler, CardBoxInstance} from './instance/CardBoxInstance';
 
 
 export type Props = {
+  // изображение должно быть растровое,
+  // размер 204x304 без закруглений углов
+  // желательно в размере x2(для ретины)
   cover?: string;
   onLoad?: EventHandler;
   onComplete?: EventHandler;

@@ -1,28 +1,20 @@
 /* eslint-disable */
 import {
-  AmbientLight,
-  AnimationAction,
-  AnimationClip,
-  AnimationMixer, BufferGeometry,
-  Clock,
-  Color,
-  Group,
-  LoopOnce, Material,
-  Mesh,
-  MeshPhysicalMaterial,
-  PerspectiveCamera,
-  PointLight,
-  Scene,
-  Texture,
-  TextureLoader,
-  Vector2,
-  Vector3,
-  WebGLRenderer
+  AmbientLight, AnimationAction, AnimationClip, AnimationMixer, BackSide,
+  Clock, Group, Mesh, MeshBasicMaterial, MeshPhongMaterial, MeshPhysicalMaterial,
+  PerspectiveCamera, PointLight, Scene, Texture, TextureLoader,
+  Vector2, WebGLRenderer
 } from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
-import { gsap } from 'gsap';
-import { Draggable } from 'gsap/Draggable';
-import { InertiaPlugin } from "./libs/InertiaPlugin";
+import {gsap} from 'gsap';
+import {Draggable} from 'gsap/Draggable';
+import {InertiaPlugin} from './libs/InertiaPlugin';
+import {RoundedCubeGeometry, RoundedPlaneGeometry} from './Rounded';
+
+import modelSource from './models/model.glb';
+import modelMapSource from './models/map.jpg';
+import modelNormalMapSource from './models/normal.jpg';
+import cardBackSource from './models/card.jpg';
 
 gsap.registerPlugin(Draggable, InertiaPlugin);
 
@@ -38,6 +30,19 @@ const processTexture = (t: Texture): Texture => {
   // t.wrapS = RepeatWrapping;
   // t.wrapT = RepeatWrapping;
   return t;
+}
+
+const getRoundedPlane = (width: number, height: number, radius: number, z: number, material: MeshPhongMaterial | MeshBasicMaterial) => {
+  const plane = new RoundedPlaneGeometry(width / height, 1, radius / height);
+  if (material.map) {
+    material.map.repeat.set(height / width, 1);
+    material.map.offset.x = -(height / width - 1) / 2;
+  }
+  const mesh = new Mesh(plane, material);
+  mesh.position.set(-height / 2, -height / 2, z);
+  mesh.scale.setScalar(height);
+
+  return mesh;
 }
 
 export type EventHandler = () => void;
@@ -66,8 +71,11 @@ export class CardBoxInstance{
 
   private readonly _renderer: WebGLRenderer;
   private readonly _scene = new Scene();
-  private readonly _group = new Group();
-  private readonly _modelGroup = new Group();
+  private readonly _globalGroup = new Group();
+  private readonly _modelGroupAnimation = new Group();
+  private readonly _modelGroupRotation = new Group();
+  private readonly _cardGroupAnimation = new Group();
+  private readonly _cardGroupRotation = new Group();
   private readonly _camera: PerspectiveCamera;
   private readonly _clock = new Clock();
   private _mixer?: AnimationMixer;
@@ -94,10 +102,11 @@ export class CardBoxInstance{
     this._hand = this._createHand();
     this._renderer.setPixelRatio(window.devicePixelRatio || 1);
 
-    this._scene.add(this._group);
-    this._group.position.z = -10;
-    this._group.position.y = -1;
-    this._group.rotation.y = -Math.PI * 3;
+    this._scene.add(this._globalGroup);
+    this._globalGroup.position.z = -10;
+    this._globalGroup.position.y = -0.03;
+    this._globalGroup.rotation.y = -Math.PI * 3;
+    this._globalGroup.add(this._modelGroupAnimation, this._cardGroupAnimation);
 
     this._camera = new PerspectiveCamera(60, 1, 0.01, 200000);
 
@@ -109,7 +118,7 @@ export class CardBoxInstance{
     // window.addEventListener('mousemove', this._onMove);
     window.addEventListener('resize', this._onResize);
 
-    this._load()
+    this._load(cover)
       .then(() => {
         if (this._isDestroyed) return;
 
@@ -124,13 +133,13 @@ export class CardBoxInstance{
   private _animateStart() {
     const tl = gsap.timeline();
 
-    tl.to(this._group.position, {
+    tl.to(this._globalGroup.position, {
       z: -1,
       y: -0.03,
       duration: 1.4,
       ease: "power4.out"
     }, 0.1);
-    tl.to(this._group.rotation, {
+    tl.to(this._globalGroup.rotation, {
       y: 0,
       duration: 1.6,
       ease: "expo.out"
@@ -153,13 +162,13 @@ export class CardBoxInstance{
 
     const tl = gsap.timeline();
 
-    tl.to(this._group.position, {
+    tl.to(this._modelGroupAnimation.position, {
       y: -2,
       x: 0.1,
       duration: 1.5,
       ease: "power4.inOut"
     }, 0);
-    tl.to(this._group.rotation, {
+    tl.to(this._modelGroupAnimation.rotation, {
       z: Math.PI / 4,
       duration: 1.6,
       ease: "expo.inOut"
@@ -176,6 +185,42 @@ export class CardBoxInstance{
       ease: "power4.inOut",
       duration: 1
     }, 0);
+    tl.to(this._cardGroupRotation.rotation, {
+      z: Math.PI / 36,
+      duration: 1,
+      delay: 0.2,
+      ease: "power4.inOut"
+    }, 0);
+    tl.to(this._cardGroupRotation.rotation, {
+      y: 0,
+      duration: 1,
+      delay: 0.3,
+      ease: "power4.inOut"
+    }, 0);
+
+
+    tl.to(this._cardGroupRotation.rotation, {
+      z: 0,
+      duration: 0.7,
+      ease: "power4.inOut"
+    }, 1);
+    tl.to(this._cardGroupAnimation.rotation, {
+      y: Math.PI * 2,
+      duration: 1,
+      ease: "power4.inOut"
+    }, 0.7);
+    tl.to(this._cardGroupAnimation.scale, {
+      x: 1.4,
+      y: 1.4,
+      z: 1.4,
+      duration: 1,
+      ease: "power4.inOut"
+    }, 0.8);
+    tl.to(this._cardGroupAnimation.position, {
+      y: 0.1,
+      duration: 1,
+      ease: "power4.inOut"
+    }, 0.8);
   }
 
 
@@ -256,26 +301,23 @@ export class CardBoxInstance{
     return {ambient, point};
   }
 
-  private async _load() {
+  private async _load(cover: string) {
     const mLoader = new GLTFLoader();
     const tLoader = new TextureLoader();
-    // const rLoader = new RGBELoader();
 
-    const [map, normalMap, model] = await Promise.all([
-    // const [bumpMap, map, normalMap, model] = await Promise.all([
-      // tLoader.loadAsync('./models/bump.jpg'),
-      tLoader.loadAsync('./models/map.jpg'),
-      tLoader.loadAsync('./models/normal.jpg'),
-      mLoader.loadAsync('./models/model.glb'),
-      // rLoader.loadAsync('./models/HDR_1.hdr')
+    const [map, normalMap, model, cardBackMap, cardFrontMap] = await Promise.all([
+      tLoader.loadAsync(modelMapSource),
+      tLoader.loadAsync(modelNormalMapSource),
+      mLoader.loadAsync(modelSource),
+      tLoader.loadAsync(cardBackSource),
+      tLoader.loadAsync(cover)
     ]);
 
     if (this._isDestroyed) return;
 
-    // processTexture(bumpMap);
     processTexture(map);
     processTexture(normalMap);
-    // hdr.flipY = false;
+    // processTexture(cardBackMap);
 
     const material = new MeshPhysicalMaterial({
       // color: 'red',
@@ -309,9 +351,51 @@ export class CardBoxInstance{
       }
     })
 
-    this._modelGroup.add(model.scene);
-    this._group.add(this._modelGroup);
-    this._group.position.y = -0.03;
+    this._modelGroupRotation.add(model.scene);
+    this._modelGroupAnimation.add(this._modelGroupRotation);
+
+
+    const w = 212;
+    const h = 342;
+    const r = 12;
+    const d = 5;
+    const b = 4;
+
+    const cardGeometry = new RoundedCubeGeometry(w, h, d, r, 0, 4);
+    const redMaterial = new MeshPhongMaterial({
+      color: '#FF4560'
+    });
+    const cardMesh = new Mesh(cardGeometry, redMaterial);
+
+    const cardBackMaterial = new MeshPhongMaterial({
+      map: cardBackMap,
+      side: BackSide
+    });
+    const cardBackMesh = getRoundedPlane(
+      w,
+      h,
+      r,
+      -(d / 2 + 0.1),
+      cardBackMaterial
+    );
+
+    const cardFrontMaterial = new MeshBasicMaterial({
+      color: '#FFF',
+      map: cardFrontMap
+    });
+    const cardFrontMesh = getRoundedPlane(
+      w - b * 2,
+      h - b * 2,
+      r - b / 2,
+      d / 2 + 0.1,
+      cardFrontMaterial
+    );
+
+    this._cardGroupRotation.scale.setScalar(0.00135);
+    this._cardGroupRotation.position.z = 0.005;
+    this._cardGroupRotation.add(cardMesh, cardBackMesh, cardFrontMesh);
+    this._cardGroupAnimation.add(this._cardGroupRotation);
+    this._cardGroupAnimation.rotation.y = Math.PI;
 
     this._isLoaded = true;
   }
@@ -325,7 +409,7 @@ export class CardBoxInstance{
 
     this._renderer.setSize(this._vw, this._vh);
 
-    this._x = 261 * heightCoeff
+    this._x = 261 * heightCoeff;
     this._draggable.applyBounds({
       minX: 0,
       maxX: this._x
@@ -359,13 +443,14 @@ export class CardBoxInstance{
     coeffDur = Math.max(coeffDur, 0);
 
     mixer.setTime(coeffDur * clip.duration);
-    this._modelGroup.rotation.y = coeffDur * (Math.PI / 12);
+    this._modelGroupRotation.rotation.y = coeffDur * (Math.PI / 12);
+    this._cardGroupRotation.rotation.y = coeffDur * (Math.PI / 12);
 
     let coeffPos = coeff * 2;
     coeffPos = Math.min(coeffPos, 1);
     this._updateHandPos(coeffPos);
 
-    if (coeff >= 1) {
+    if (coeffPos >= 0.99) {
       this._animateDragEnd();
     }
   }
@@ -377,6 +462,6 @@ export class CardBoxInstance{
   // private _move(e: MouseEvent)  {
   //   const pos = (e.clientX - this._vw / 2) / this._vw;
   //
-  //   this._group.rotation.y = Math.PI * pos * 2
+  //   this._globalGroup.rotation.y = Math.PI * pos * 2
   // }
 }
