@@ -47,11 +47,12 @@ export const getModel = (model: GLTF, map: Texture, normalMap: Texture) => {
     if ('isMesh' in obj) {
       const object = obj as Mesh;
       object.material = material;
-      if (object.name === 'top') {
+      if (object.name.toLowerCase() === 'top') {
         top = object;
       }
     }
-  })
+  });
+
 
   const rotation = new Group();
   const animation = new Group();

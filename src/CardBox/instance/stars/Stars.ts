@@ -1,5 +1,5 @@
 /* eslint-disable */
-import {BufferAttribute, BufferGeometry, Color, Group, Points, ShaderMaterial} from 'three';
+import {AdditiveBlending, BufferAttribute, BufferGeometry, Color, Group, Points, ShaderMaterial} from 'three';
 import {generateStarTexture} from './texture';
 import {RESOLUTION} from '../CardBoxInstance';
 
@@ -71,10 +71,10 @@ export const generateStars = () => {
     },
     // fog: true,
     transparent: true,
-    // depthTest: false,
-    // depthWrite: false,
+    depthTest: false,
+    depthWrite: false,
     // side: DoubleSide,
-    // blending: AdditiveBlending,
+    blending: AdditiveBlending,
     vertexShader,
     fragmentShader
   });

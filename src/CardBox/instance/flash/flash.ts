@@ -1,5 +1,5 @@
 /* eslint-disable */
-import {Mesh, MeshBasicMaterial, PlaneGeometry, Texture} from 'three';
+import {AdditiveBlending, Mesh, MeshBasicMaterial, PlaneGeometry, Texture} from 'three';
 
 export const getFlash = (map: Texture) => {
   const geometry = new PlaneGeometry();
@@ -7,12 +7,13 @@ export const getFlash = (map: Texture) => {
     transparent: true,
     // color: 'red',
     map,
+    blending: AdditiveBlending,
     opacity: 0
   });
   const mesh = new Mesh(geometry, material);
-  mesh.position.z = -5;
+  mesh.position.z = -7.1;
   mesh.position.y = 3;
-  mesh.scale.setScalar(9);
+  mesh.scale.setScalar(13);
 
   return {
     geometry,

@@ -39,6 +39,8 @@ export enum CardInstanceState {
 export type EventHandler = (state: CardInstanceState) => void;
 
 export class CardBoxInstance {
+  private _state = 0;
+
   private _isLoaded = false;
   private _isComplete = false;
   private _isDestroyed = false;
@@ -82,7 +84,7 @@ export class CardBoxInstance {
     this._renderer = new WebGLRenderer({
       alpha: true,
       antialias: true,
-      // logarithmicDepthBuffer: true // if textures blinking
+      logarithmicDepthBuffer: true
     });
     this._container.appendChild(this._renderer.domElement);
     this._hand = this._createHand();
@@ -109,9 +111,14 @@ export class CardBoxInstance {
 
         this._resize();
         this._raf = requestAnimationFrame(this._tickHandler);
-        this._onStateChange(1);
+        this._changeState(1);
       })
       .then(() => this._animateStart());
+  }
+
+  private _changeState(state: CardInstanceState) {
+    this._state = state;
+    this._onStateChange(state);
   }
 
 
@@ -143,13 +150,14 @@ export class CardBoxInstance {
     }, 1.5);
 
     tl.add(() => {
-      this._onStateChange(2)
+      this._changeState(2)
     })
   }
   private _animateDragEnd() {
+    if (this._state >= 3) return;
     this._draggable.disable();
     this._model!.top?.removeFromParent();
-    this._onStateChange(3);
+    this._changeState(3);
 
     const tl = gsap.timeline();
 
@@ -272,7 +280,7 @@ export class CardBoxInstance {
       z: 3,
       duration: 1,
       ease: 'power4.out',
-      onStart: () => this._onStateChange(4)
+      onStart: () => this._changeState(4)
     }, 3);
     tl.to(this._container, {
       opacity: 0,
@@ -281,7 +289,7 @@ export class CardBoxInstance {
     }, 3)
 
 
-    tl.add(() => this._onStateChange(5));
+    tl.add(() => this._changeState(5));
   }
 
 
@@ -331,7 +339,7 @@ export class CardBoxInstance {
       resistance: 10000000,
       snap: {
         x: (value) => {
-          if (value < this._x * 0.4) {
+          if (value < this._x * 0.2) {
             return 0;
           } else {
             return this._x;
