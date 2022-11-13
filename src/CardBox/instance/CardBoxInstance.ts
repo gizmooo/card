@@ -168,12 +168,12 @@ export class CardBoxInstance {
       overwrite: true,
       ease: 'power4.inOut'
     }, 0);
-    tl.to(this._model!.animation.rotation, {
-      z: Math.PI / 4,
-      duration: 2,
-      overwrite: true,
-      ease: 'expo.inOut'
-    }, 0);
+    // tl.to(this._model!.animation.rotation, {
+    //   z: Math.PI / 4,
+    //   duration: 2,
+    //   overwrite: true,
+    //   ease: 'expo.inOut'
+    // }, 0);
     tl.to(this._hand.inner, {
       x: -5,
       y: 50,
@@ -188,16 +188,16 @@ export class CardBoxInstance {
       ease: 'power4.inOut'
     }, 0);
 
-    tl.to(this._card!.rotation.rotation, {
-      z: Math.PI / 36,
-      duration: 1,
-      ease: 'power4.inOut'
-    }, 0.2);
-    tl.to(this._card!.rotation.rotation, {
-      y: 0,
-      duration: 1,
-      ease: 'power4.inOut'
-    }, 0.3);
+    // tl.to(this._card!.rotation.rotation, {
+    //   z: Math.PI / 36,
+    //   duration: 1,
+    //   ease: 'power4.inOut'
+    // }, 0.2);
+    // tl.to(this._card!.rotation.rotation, {
+    //   y: 0,
+    //   duration: 1,
+    //   ease: 'power4.inOut'
+    // }, 0.3);
 
 
     tl.to(this._card!.rotation.rotation, {
