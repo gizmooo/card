@@ -12,7 +12,7 @@ export const getFlash = (map: Texture) => {
   });
   const mesh = new Mesh(geometry, material);
   mesh.position.z = -7.1;
-  mesh.position.y = 3;
+  mesh.position.y = 6;
   mesh.scale.setScalar(13);
 
   return {

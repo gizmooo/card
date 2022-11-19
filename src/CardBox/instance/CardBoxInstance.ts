@@ -168,12 +168,12 @@ export class CardBoxInstance {
       overwrite: true,
       ease: 'power4.inOut'
     }, 0);
-    // tl.to(this._model!.animation.rotation, {
-    //   z: Math.PI / 4,
-    //   duration: 2,
-    //   overwrite: true,
-    //   ease: 'expo.inOut'
-    // }, 0);
+    tl.to(this._model!.animation.rotation, {
+      z: Math.PI / 4,
+      duration: 2,
+      overwrite: true,
+      ease: 'expo.inOut'
+    }, 0);
     tl.to(this._hand.inner, {
       x: -5,
       y: 50,
@@ -432,6 +432,7 @@ export class CardBoxInstance {
   }
 
   private _onDrag(x: number) {
+    if (this._state >= 3) return;
     const {clip, mixer, action, rotation: modelRotation} = this._model!;
     const {rotation: cardRotation} = this._card!;
 
